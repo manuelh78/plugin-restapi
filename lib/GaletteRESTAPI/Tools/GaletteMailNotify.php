@@ -94,8 +94,9 @@ final class GaletteMailNotify extends GaletteMail
     public function getMailsStaff()
     {
         $ret = [];
-        //if (1) return ["manuelh78dev@ik.me" => "M. X Manuel"];
+        //if (1) return ["XXXdev@ik.me" => "M. X Manuel"];
 
+        //FIXME : use a galette group
         $m = new Members();
         $staffMembers = $m->getStaffMembersList(true);
 

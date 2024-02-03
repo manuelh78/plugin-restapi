@@ -1,5 +1,7 @@
 # REST API for Galette (https://galette.eu)
 
+To date, user texts _T('xxx') are only in French.
+
 ## Setup
 
 ```

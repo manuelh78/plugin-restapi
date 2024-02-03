@@ -38,7 +38,6 @@ final class ExceptionMiddleware
 {
     private $router;
     private $container;
-    private $jwtAuthentication;
 
     public function __construct(ContainerInterface $container)
     {
