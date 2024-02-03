@@ -1,0 +1,26 @@
+{
+    "name": "galette/plugin-restapi",
+    "description": "Plugin Galette RESTAPI",
+    "license": "GPLv3",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "GaletteRESTAPI\\": "lib/GaletteRESTAPI"
+        }
+    },
+    "authors": [{
+        "name": "manuelh78",
+        "email": "manuelh78dev@ik.me"
+    }],
+    "require": {
+        "php": ">=7.3",
+        "symfony/yaml": "^5.3",
+        "hassankhan/config": "^2.2",
+        "tuupola/slim-jwt-auth": "3.7",
+        "twig/twig": "^3.8",
+        "defuse/php-encryption": "^2.4"
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

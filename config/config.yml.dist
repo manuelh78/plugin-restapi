@@ -1,0 +1,10 @@
+association:
+  name: 'Association XXX'
+  urlformcontact : 'https://contact.XXX.fr'
+  mail:
+    from: 'contact@XXX.fr'
+    signature: "L'équipe de XXX.fr"
+
+newsletter:
+    subscribeclass : Basic
+    unsubscribeclass : Basic,PhpList

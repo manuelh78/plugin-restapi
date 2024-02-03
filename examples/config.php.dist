@@ -1,0 +1,13 @@
+<?php
+
+$urlAPIREST = 'http://192.168.1.99/gestion/galette/webroot/plugins/restapi';
+
+//$email = $uuid = \uniqid('test_') . '@test.fr';
+$email1 = 'XXX+pub100@gmail.com';
+$email2 = 'XXX+pub101@gmail.com';
+ 
+
+$urlcallbackNewsletterAdd = 'http://192.168.1.99/gestion/galette/plugins/plugin-restapi/examples/confirm_add.php';
+$urlcallbackNewsletterRemove = 'http://192.168.1.99/gestion/galette/plugins/plugin-restapi/examples/confirm_remove.php';
+
+$UID_testmail = 262;
