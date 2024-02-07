@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -30,16 +30,21 @@ declare(strict_types=1);
  *  @license   http://www.gnu.org/licenses/gpl-3.0.html GPL License 3.0
  */
 
+use DI\Container;
 use GaletteRESTAPI\Tools\Debug;
 use GaletteRESTAPI\Tools\JWTHelper;
+// use Slim\Router;
 use Psr\Container\ContainerInterface;
-use Slim\Router;
+use Slim\App;
+use Slim\Factory\ServerRequestCreatorFactory;
+use Slim\Routing\RouteParser;
 
 if (RESTAPI_LOG) {
     Debug::init();
 }
 
-$container = $this->getContainer();
+$container = $app->getContainer();
+$container->get(App::class)->addBodyParsingMiddleware(); // Add Json parser body
 
 $container->set(
     'config',
@@ -47,7 +52,7 @@ $container->set(
         $conf = new GaletteRESTAPI\Tools\Config(RESTAPI_CONFIGPATH . '/config.yml');
 
         if (!$conf->get('cryptokey')) {
-            $nk = \Defuse\Crypto\Key::createNewRandomKey();
+            $nk = Defuse\Crypto\Key::createNewRandomKey();
             $conf->set('cryptokey', $nk->saveToAsciiSafeString());
             $conf->writeFile();
         }
@@ -59,20 +64,20 @@ $container->set(
 $container->set(
     'cryptokey',
     static function (ContainerInterface $container) {
-        return \Defuse\Crypto\Key::loadFromAsciiSafeString($container->get('config')->get('cryptokey'));
+        return Defuse\Crypto\Key::loadFromAsciiSafeString($container->get('config')->get('cryptokey'));
     }
 );
 
 $container->set(
-    \Tuupola\Middleware\JwtAuthentication::class,
+    Tuupola\Middleware\JwtAuthentication::class,
     static function (ContainerInterface $container) {
-        return new \Tuupola\Middleware\JwtAuthentication([
+        return new Tuupola\Middleware\JwtAuthentication([
             'logger' => Debug::getLogger(),
             'path' => '(.*)/api', /* or ["/api", "/admin"] */
             'attribute' => 'jwt_data',
             'secret' => JWTHelper::getPrivateKey(),
             'algorithm' => ['HS256'],
-            'error' => /*static phpcs*/ function ($response, $arguments) {
+            'error' => /* static phpcs */ function ($response, $arguments) {
                 $data['status'] = 'error';
                 $data['message'] = $arguments['message'];
 
@@ -80,29 +85,28 @@ $container->set(
 
                 return $response
                     ->withHeader('Content-Type', 'application/json')
-                    ->write(\json_encode($data, \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT));
+                    ->getBody()->write(\json_encode($data, \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT));
             },
             'secure' => RESTAPI_DEBUG ? false : true,
-            //'ignore' => ['/api/token']
+            // 'ignore' => ['/api/token']
         ]);
     }
 );
 
-$container->set(
-    'router',
-    static function (Router $router) {
-        return $router;
-    }
-);
+$container->set('request', static function () {
+    $serverRequestCreator = ServerRequestCreatorFactory::create();
+
+    return $request = $serverRequestCreator->createServerRequestFromGlobals();
+});
 
 // Set view in Container
-$container->set('twig', static function (ContainerInterface $container) {
-    $loader = new \Twig\Loader\FilesystemLoader(__DIR__ . '/templates');
+$container->set('twig', static function (ContainerInterface $container) use ($app) {
+    $loader = new Twig\Loader\FilesystemLoader(__DIR__ . '/templates');
 
-    $view = new \Twig\Environment(
+    $view = new Twig\Environment(
         $loader,
         [
-            //'cache' => '/path/to/compilation_cache',
+            // 'cache' => '/path/to/compilation_cache',
             'debug' => RESTAPI_DEBUG ? true : false
         ]
     );
@@ -110,9 +114,8 @@ $container->set('twig', static function (ContainerInterface $container) {
     $uri = $container->get('request')->getUri();
 
     $view->addGlobal('url_root', $uri->getScheme() . '://' . $uri->getHost());
-    $view->addGlobal('url_base', $uri->getBaseUrl() . '/');
-    //V4$view->addGlobal("url_base", $app->getBasePath().'/');
-    $view->addGlobal('galette_webroot', $container->get('router')->urlFor('slash'));
+    $view->addGlobal('url_base', $uri->getScheme() . '://' . $uri->getHost() . $app->getBasePath() . '/');
+    $view->addGlobal('galette_webroot', $container->get(RouteParser::class)->urlFor('slash'));
 
     $view->addGlobal('session', $_SESSION);
 

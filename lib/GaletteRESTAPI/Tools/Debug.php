@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -40,10 +40,10 @@ final class Debug
 
     public static function init()
     {
-        self::$logger = new \Monolog\Logger('RestAPI');
+        self::$logger = new Logger('RestAPI');
         $stream = new \Monolog\Handler\StreamHandler(__DIR__ . '/../../../logs/app.log', Logger::DEBUG);
         $dateFormat = 'Y-m-d H:i:s';
-        //$output = "[%datetime%] %channel% %level_name%: %message% \n"; // %context% %extra%\n";
+        // $output = "[%datetime%] %channel% %level_name%: %message% \n"; // %context% %extra%\n";
         $output = "[%datetime%] : %message% \n"; // %context% %extra%\n";
         $formatter = new \Monolog\Formatter\LineFormatter($output, $dateFormat);
         $stream->setFormatter($formatter);
@@ -71,6 +71,7 @@ final class Debug
         if ((bool) $return) {
             return $export;
         }
+
         echo $export;
     }
 

@@ -8,17 +8,22 @@
             "GaletteRESTAPI\\": "lib/GaletteRESTAPI"
         }
     },
-    "authors": [{
-        "name": "manuelh78",
-        "email": "manuelh78dev@ik.me"
-    }],
+    "authors": [
+        {
+            "name": "manuelh78",
+            "email": "manuelh78dev@ik.me"
+        }
+    ],
     "require": {
-        "php": ">=7.3",
+        "php": ">=8.1",
+        "hassankhan/config": "^3",
         "symfony/yaml": "^5.3",
-        "hassankhan/config": "^2.2",
-        "tuupola/slim-jwt-auth": "3.7",
+        "tuupola/slim-jwt-auth": "^3.7",
+        "psr/log": "^1.0",
         "twig/twig": "^3.8",
-        "defuse/php-encryption": "^2.4"
+        "defuse/php-encryption": "^2.4",
+        "psr/http-message": "^1.0",
+        "slim/psr7": "^1.6"
     },
     "config": {
         "optimize-autoloader": true

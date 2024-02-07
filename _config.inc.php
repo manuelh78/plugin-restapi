@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -31,7 +31,7 @@ declare(strict_types=1);
  */
 
 \define('RESTAPI_LOG', !false);
-\define('RESTAPI_CONFIGPATH', __DIR__ . '/config'); //For more security, you can move this folder
+\define('RESTAPI_CONFIGPATH', __DIR__ . '/config'); // For more security, you can move this folder
 
 \define('RESTAPI_PREFIX', 'restapi');
 

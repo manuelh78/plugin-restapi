@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -34,42 +34,48 @@ namespace GaletteRESTAPI\Middlewares;
 
 use GaletteRESTAPI\Tools\Debug;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Slim\Routing\RouteCollector;
+use Slim\Routing\RouteContext;
 
 final class HeaderAccessControlMiddleware
 {
-    private $router;
+    private $routeCollector;
 
     public function __construct(ContainerInterface $container)
     {
-        $this->router = $container->get('router');
+        $this->routeCollector = $container->get(RouteCollector::class);
     }
 
-    public function __invoke($request, $response, $next)
+    public function __invoke(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         Debug::logRequest($request);
 
-        $route = $request->getAttribute('route');
+        $routeContext = RouteContext::fromRequest($request);
+        $route = $routeContext->getRoute();
 
         $methods = [];
 
         if (!empty($route)) {
             $pattern = $route->getPattern();
 
-            foreach ($this->router->getRoutes() as $route) {
+            foreach ($this->routeCollector->getRoutes() as $route) {
                 if ($route->getPattern() === $pattern) {
                     $methods = \array_merge_recursive($methods, $route->getMethods());
                 }
             }
-            //Methods holds all of the HTTP Verbs that a particular route handles.
+            // Methods holds all of the HTTP Verbs that a particular route handles.
         } else {
             $methods[] = $request->getMethod();
         }
 
-        $response = $next($request, $response);
+        $response = $handler->handle($request);
 
         return $response->withHeader('Access-Control-Allow-Methods', \implode(',', $methods))
             ->withHeader('Access-Control-Allow-Origin', '*')
-            //->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization');
+            // ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization');
             ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Access-Control-Allow-Headers, Authorization')
             ->withHeader('Access-Control-Max-Age', '60');
     }

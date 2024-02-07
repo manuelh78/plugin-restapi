@@ -2,6 +2,9 @@
 
 $urlAPIREST = 'http://192.168.1.99/gestion/galette/webroot/plugins/restapi';
 
+$login_nick = 'test';
+$login_password = 'testtest';
+
 //$email = $uuid = \uniqid('test_') . '@test.fr';
 $email1 = 'XXX+pub100@gmail.com';
 $email2 = 'XXX+pub101@gmail.com';

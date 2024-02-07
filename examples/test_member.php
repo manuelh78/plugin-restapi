@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -59,8 +59,8 @@ $datas = test(
         $urlAPIREST . '/api/login',
         'POST',
         [
-            'login' => 'test',
-            'password' => 'testtest'
+            'login' => $login_nick,
+            'password' => $login_password,
         ]
     )
 );
@@ -110,7 +110,7 @@ $datas = test(
 
                 'info_field_6' => 'a text',
                 //                'bad' => 'bad'
-                //'email' => 'test@test.fr',
+                // 'email' => 'test@test.fr',
             ]
         ],
         $token
@@ -135,7 +135,7 @@ test('Modify member', http(
     [
         'member' => [
             'surname' => 'Anne sophie',
-            'company_name' => '', //Société XYZ',
+            'company_name' => '', // Société XYZ',
             'info_field_1' => 2,
             'info_field_6' => 'a NEW text éèàêê',
             'info_field_28' => 2,
@@ -155,7 +155,7 @@ test('Find member by mail', http(
     $urlAPIREST . '/api/member/find',
     'POST',
     [
-        'email' => 'test@test.fr'
+        'email' => $uuid . 'test@test.fr'
     ],
     $token
 ));
@@ -167,7 +167,7 @@ test('Find member by id & zipcode', http(
         'uid' => $newUID,
         'zipcode' => '75001'
     ],
-        //$token
+    // $token
 ));
 
 if (10) {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -30,7 +30,18 @@ declare(strict_types=1);
  *  @license   http://www.gnu.org/licenses/gpl-3.0.html GPL License 3.0
  */
 
-$_tpl_assignments = [
-    'restapi_tpl_dir' => '__plugin_templates_dir__',
-    'restapi_dir' => '__plugin_dir__',
-];
+namespace GaletteRESTAPI\Tools;
+
+final class RequestHelper
+{
+    public static function getParsedBodyParam($request, $arg, $default = ''): mixed
+    {
+        $parsedBody = $request->getParsedBody();
+
+        if (isset($parsedBody[$arg])) {
+            return $parsedBody[$arg];
+        }
+
+        return $default;
+    }
+}

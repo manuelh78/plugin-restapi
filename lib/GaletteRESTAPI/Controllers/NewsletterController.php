@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -35,11 +35,12 @@ namespace GaletteRESTAPI\Controllers;
 use Defuse\Crypto\Crypto;
 use Galette\Controllers\AbstractPluginController;
 use GaletteRESTAPI\Tools\GaletteMailNotify;
+use GaletteRESTAPI\Tools\JsonResponse;
 use GaletteRESTAPI\Tools\MemberHelper;
 use GaletteRESTAPI\Tools\Security;
 use Psr\Container\ContainerInterface;
-use Slim\Http\Request;
-use Slim\Http\Response;
+use Slim\Psr7\Request;
+use Slim\Psr7\Response;
 
 final class NewsletterController extends AbstractPluginController
 {
@@ -54,7 +55,7 @@ final class NewsletterController extends AbstractPluginController
         $this->container = $container;
     }
 
-    //192.168.1.99/gestion/galette/webroot/plugins/restapi/api/newsletter/add
+    // 192.168.1.99/gestion/galette/webroot/plugins/restapi/api/newsletter/add
     public function add(Request $request, Response $response): Response
     {
         $params = (object) $request->getParsedBody();
@@ -62,11 +63,13 @@ final class NewsletterController extends AbstractPluginController
         if (!isset($params->urlcallback)) {
             throw new \Exception(_T('urlcallback is not set.'));
         }
+
         $email = isset($params->email) ? \trim(\filter_var($params->email, \FILTER_VALIDATE_EMAIL)) : '';
         $userdata = isset($params->userdata) ? \filter_var($params->userdata, \FILTER_SANITIZE_STRING) : null;
 
         if (!$email) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T("Le format de l'adresse n'est pas correct.")]
@@ -76,7 +79,8 @@ final class NewsletterController extends AbstractPluginController
         $mf = MemberHelper::findMember(['email' => $email]);
 
         if (\count($mf) > 0) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('Cette adresse est déjà enregistrée !')
@@ -84,7 +88,7 @@ final class NewsletterController extends AbstractPluginController
             )->withStatus(404);
         }
 
-        //$newsBasic = new \GaletteRESTAPI\Newsletter\Basic($this->zdb, $this->config);
+        // $newsBasic = new \GaletteRESTAPI\Newsletter\Basic($this->zdb, $this->config);
         $t = $this->config->get('newsletter.subscribeclass');
         $className = '\\GaletteRESTAPI\\Newsletter\\' . \ucfirst($t);
         $application = new $className($this->zdb, $this->config);
@@ -107,7 +111,8 @@ final class NewsletterController extends AbstractPluginController
                 ]
             )
         )) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T("Une erreur est survenue lors de l'envoi du mail de validation. ") . $email
@@ -115,7 +120,7 @@ final class NewsletterController extends AbstractPluginController
             )->withStatus(404);
         }
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => _T('Adresse email ajoutée.'),
             'email' => $email,
@@ -124,13 +129,14 @@ final class NewsletterController extends AbstractPluginController
         ]);
     }
 
-    //192.168.1.99/gestion/galette/webroot/plugins/restapi/api/newsletter/confirm/xxxx
+    // 192.168.1.99/gestion/galette/webroot/plugins/restapi/api/newsletter/confirm/xxxx
     public function confirm_add(Request $request, Response $response, ?string $codeValid): Response
     {
         $params = (object) $request->getParsedBody();
 
         if (!isset($codeValid)) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T("L'adresse est invalide")
@@ -145,9 +151,9 @@ final class NewsletterController extends AbstractPluginController
         $t = $this->config->get('newsletter.subscribeclass');
         $className = '\\GaletteRESTAPI\\Newsletter\\' . \ucfirst($t);
         $application = new $className($this->zdb, $this->config);
-        $application->confirm($email/*, $nid*/);
+        $application->confirm($email/* , $nid */);
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => 'Votre adresse email a été validée.'
         ]);
@@ -160,10 +166,12 @@ final class NewsletterController extends AbstractPluginController
         if (!isset($params->urlcallback)) {
             throw new \Exception(_T('urlcallback is not set.'));
         }
+
         $email = isset($params->email) ? \trim(\filter_var($params->email, \FILTER_VALIDATE_EMAIL)) : null;
 
         if (!$email) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T("L'adresse email est incorrecte.")
@@ -180,7 +188,7 @@ final class NewsletterController extends AbstractPluginController
             $r[] = _T('Fiche adherent');
         }
 
-        //Autres
+        // Autres
         foreach (\explode(',', $this->config->get('newsletter.unsubscribeclass')) as $t) {
             $bOk = false;
             $className = '\\GaletteRESTAPI\\Newsletter\\' . \ucfirst($t);
@@ -193,7 +201,7 @@ final class NewsletterController extends AbstractPluginController
 
         if (\count($r) < 1) {
             if (\count($r) < 1) {
-                return $response->withJson([
+                return JsonResponse::withJson($response, [
                     'status' => 'success',
                     'message' => _T("Cette adresse email n'est pas utilisée."),
                     'tables' => $r
@@ -201,7 +209,7 @@ final class NewsletterController extends AbstractPluginController
             }
         }
 
-        //Envoi un email de demande de confirmation
+        // Envoi un email de demande de confirmation
         $codeValid = Crypto::encrypt($email, $this->container->get('cryptokey'));
         $mailNotify = new GaletteMailNotify($this->preferences, $this->history);
 
@@ -218,7 +226,8 @@ final class NewsletterController extends AbstractPluginController
                 ]
             )
         )) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T("Une erreur est survenue lors de l'envoi du mail de validation. ") . $email
@@ -226,7 +235,7 @@ final class NewsletterController extends AbstractPluginController
             )->withStatus(404);
         }
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => _T("Un courriel de validation a été envoyé. L'adresse email sera retirée en cliquant sur le lien de confirmation."),
             'tables' => $r
@@ -240,7 +249,7 @@ final class NewsletterController extends AbstractPluginController
         $r = [];
         $now = \date('d/m/Y');
 
-        //Dans la fiche galette de l'adhérent ?
+        // Dans la fiche galette de l'adhérent ?
         $update = $this->zdb->sql->update('galette_adherents');
         $update->set(['activite_adh' => 0])->where(['email_adh' => $email]);
         $sql = $this->zdb->sql->getSqlStringForSqlObject($update);
@@ -248,7 +257,7 @@ final class NewsletterController extends AbstractPluginController
 
         if (\count($changed) > 0) {
             $r[] = _T('Fiche adherent');
-            //Garder une trace de l'adresse email
+            // Garder une trace de l'adresse email
             $replace = $email;
             $update = $this->zdb->sql->update('galette_adherents');
             $update->set([
@@ -260,7 +269,7 @@ final class NewsletterController extends AbstractPluginController
             $changed = $this->zdb->execute($update);
         }
 
-        //Autres
+        // Autres
 
         foreach (\explode(',', $this->config->get('newsletter.unsubscribeclass')) as $t) {
             $bOk = false;
@@ -273,7 +282,7 @@ final class NewsletterController extends AbstractPluginController
             }
         }
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => _T("L'adresse email a été retirée."),
             'tables' => $r

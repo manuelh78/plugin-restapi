@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -31,20 +31,17 @@ declare(strict_types=1);
  */
 
 $this->register(
-    'Galette RESTAPI',       //Name
-    'REST API',   //Short description
-    'manuelh78',     //Author
-    '0.1.0',                //Version
-    '0.9.5',                //Galette compatible version
-    'restapi',               //routing name and translation domain
-    '2024-29-01',           //Release date
-    [//Permissions needed
+    'Galette RESTAPI',       // Name
+    'REST API',   // Short description
+    'manuelh78',     // Author
+    '0.2.0',                // Version
+    '1.1.0',                // Galette compatible version
+    'restapi',               // routing name and translation domain
+    '2024-29-01',           // Release date
+    [// Permissions needed
     ],
 );
 
-if (1) {
-    $this->setCsrfExclusions([
-        //'/restapi_*/','/api_*/'
-        '#restapi(.*)#', '#api(.*)#'
-    ]);
-}
+$this->setCsrfExclusions(
+    ['/restapi_(.*)/']
+);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -33,29 +33,28 @@ declare(strict_types=1);
 namespace GaletteRESTAPI\Middlewares;
 
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 final class JwtLoginMiddleware
 {
-    private $router;
     private $container;
-    private $jwtAuthentication;
 
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->router = $container->get('router');
     }
-//    public function __invoke($request, $handler): Response
 
-    public function __invoke($request, $response, $next)
+    public function __invoke(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         global $login;
-        //$login = $this->container->get('login');
+        // $login = $this->container->get('login');
 
         if (\GaletteRESTAPI\Tools\MemberHelper::loginJwtMember($request, $login)) {
             $this->container->set('login', $login);
         }
 
-        return $next($request, $response);
+        return $handler->handle($request);
     }
 }

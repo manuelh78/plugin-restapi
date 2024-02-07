@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -35,7 +35,7 @@ namespace GaletteRESTAPI\Tools;
 use Galette\DynamicFields\DynamicField;
 use Galette\Filters\AdvancedMembersList;
 use Galette\Repository\Members;
-use Slim\Http\Request;
+use Psr\Http\Message\ServerRequestInterface;
 
 require 'mb.php';
 
@@ -51,8 +51,9 @@ final class MemberHelper
         ];
 
         if (!\defined('GALETTE_TESTS')) {
-            $forbidden[] = 'password'; //keep that for tests only
+            $forbidden[] = 'password'; // keep that for tests only
         }
+
         $fields = [];
 
         foreach ($members_fields as $mf) {
@@ -108,7 +109,7 @@ final class MemberHelper
         return $values;
     }
 
-    //SESSION n'est pas utilisable
+    // SESSION n'est pas utilisable
     public static function getLoggedMember(): ?\Galette\Core\Login
     {
         global $login;
@@ -116,7 +117,7 @@ final class MemberHelper
         return $login;
     }
 
-    public static function loginJwtMember(Request $request, \Galette\Core\Login &$login)
+    public static function loginJwtMember(ServerRequestInterface $request, \Galette\Core\Login &$login)
     {
         $jwt = $request->getAttribute('jwt_data');
 
@@ -147,7 +148,7 @@ final class MemberHelper
             'titleid' => isset($member->title) ? $member->title->id : 0,
 
             'name' => \mb_strtoupper($member->name),
-            'surname' => /*\mb_*/ \ucwords(\mb_strtolower($member->surname)),
+            'surname' => /* \mb_ */ \ucwords(\mb_strtolower($member->surname)),
             'company_name' => \mb_ucfirst($member->company_name),
 
             // 'nickname' => mb_ucfirst($member->nickname),
@@ -157,7 +158,7 @@ final class MemberHelper
             'country' => \mb_ucfirst($member->country),
 
             'address' => $member->getAddress(),
-            'address2' => $member->getAddressContinuation(),
+            'address2' => '', // $member->getAddressContinuation(),
         ];
     }
 

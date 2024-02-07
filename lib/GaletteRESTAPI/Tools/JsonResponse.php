@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -30,29 +30,19 @@ declare(strict_types=1);
  *  @license   http://www.gnu.org/licenses/gpl-3.0.html GPL License 3.0
  */
 
-namespace GaletteRESTAPI\Middlewares;
+namespace GaletteRESTAPI\Tools;
 
-use Psr\Container\ContainerInterface;
+use Slim\Psr7\Response;
 
-final class ExceptionMiddleware
+final class JsonResponse extends Response
 {
-    private $router;
-    private $container;
-
-    public function __construct(ContainerInterface $container)
+    public static function withJson($response, array $data): Response
     {
-        $this->container = $container;
-        $this->router = $container->get('router');
-    }
+        $payload = \json_encode($data);
 
-    public function __invoke($request, $response, $next)
-    {
-        try {
-            return $next($request, $response);
-        } catch (\Exception $exception) {
-            return \GaletteRESTAPI\Tools\Exception::returnException($response, $exception);
-        } catch (\Throwable $exception) {
-            return \GaletteRESTAPI\Tools\Exception::returnException($response, $exception);
-        }
+        $response->getBody()->write($payload);
+
+        return $response
+            ->withHeader('Content-Type', 'application/json');
     }
 }

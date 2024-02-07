@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -30,11 +30,9 @@ declare(strict_types=1);
  *  @license   http://www.gnu.org/licenses/gpl-3.0.html GPL License 3.0
  */
 
-//Use composer https://github.com/hassankhan/config
+// Use composer https://github.com/hassankhan/config
 
 namespace GaletteRESTAPI\Tools;
-
-use GaletteRESTAPI\Tools\Debug as Debug;
 
 final class Config extends \Noodlehaus\Config
 {

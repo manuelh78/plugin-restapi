@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -54,12 +54,12 @@ final class JWTHelper
     {
         $payload = \array_merge($this->payload, $datas);
 
-        return \Firebase\JWT\JWT::encode($payload, self::getPrivateKey($this->pathFileKey), $this->alg);
+        return JWT::encode($payload, self::getPrivateKey($this->pathFileKey), $this->alg);
     }
 
     public function decode(string $jwt)
     {
-        return \Firebase\JWT\JWT::decode($jwt, new Key(self::getPrivateKey($this->pathFileKey), $this->alg));
+        return JWT::decode($jwt, new Key(self::getPrivateKey($this->pathFileKey), $this->alg));
     }
 
     public static function getPrivateKey($pathFileKey = RESTAPI_CONFIGPATH)

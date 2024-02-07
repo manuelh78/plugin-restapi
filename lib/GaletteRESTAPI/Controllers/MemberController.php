@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -41,10 +41,12 @@ use Galette\Repository\Members;
 use GaletteRESTAPI\Newsletter\Basic as NewsletterBasic;
 use GaletteRESTAPI\Tools\Debug;
 use GaletteRESTAPI\Tools\GaletteMailNotify;
+use GaletteRESTAPI\Tools\JsonResponse;
 use GaletteRESTAPI\Tools\MemberHelper;
+use GaletteRESTAPI\Tools\RequestHelper;
 use Psr\Container\ContainerInterface;
-use Slim\Http\Request;
-use Slim\Http\Response;
+use Slim\Psr7\Request;
+use Slim\Psr7\Response;
 
 final class MemberController extends AbstractPluginController
 {
@@ -64,13 +66,14 @@ final class MemberController extends AbstractPluginController
 
     public function get(Request $request, Response $response, ?string $uid): Response
     {
-        //$jwtToken = (object) $request->getAttribute('jwt_data');
+        // $jwtToken = (object) $request->getAttribute('jwt_data');
         $member = self::newMember();
 
         if (!$member->load((int) $uid)) {
             Debug::log("member [{$uid}] load failed");
 
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('member load failed')]
@@ -78,7 +81,7 @@ final class MemberController extends AbstractPluginController
         }
 
         if (!$member->canShow(MemberHelper::getLoggedMember($request, $this->login))) {
-            return $response->withJson([
+            return JsonResponse::withJson($response, [
                 'status' => 'error',
                 'message' => _T("Logged user can't show this member")
             ])->withStatus(403);
@@ -111,19 +114,19 @@ final class MemberController extends AbstractPluginController
 
         Debug::log("Return member [{$uid}] " . MemberHelper::getNormName($member));
 
-        return $response->withJson(['status' => 'success', 'results' => $results]);
+        return JsonResponse::withJson($response, ['status' => 'success', 'results' => $results]);
     }
 
-    //Create new user
+    // Create new user
     public function post(Request $request, Response $response): Response
     {
-        $newMemberDatas = $request->getParsedBodyParam('member');
+        $newMemberDatas = RequestHelper::getParsedBodyParam($request, 'member');
 
         if (isset($newMemberDatas['email'])) {
             $mf = MemberHelper::findMember(['email' => \trim($newMemberDatas['email'])]);
 
             if (\count($mf) > 0) {
-                return $response->withJson([
+                return JsonResponse::withJson($response, [
                     'status' => 'error',
                     'message' => _T('Email already exist'),
                     'uid' => $mf[0]->id,
@@ -138,7 +141,7 @@ final class MemberController extends AbstractPluginController
         }
 
         if (!$member->canCreate(MemberHelper::getLoggedMember())) {
-            return $response->withJson([
+            return JsonResponse::withJson($response, [
                 'status' => 'error',
                 'message' => _T("Logged user can't create this member")
             ])->withStatus(403);
@@ -147,7 +150,8 @@ final class MemberController extends AbstractPluginController
         $this->memberModify($member, $newMemberDatas);
 
         if (!$member->store()) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('Error when storing member')]
@@ -156,7 +160,7 @@ final class MemberController extends AbstractPluginController
 
         self::removeNewsletterFree($member->email);
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => _T('Created with ') . \implode(', ', \array_keys($newMemberDatas)),
             'uid' => $member->id]);
@@ -164,13 +168,14 @@ final class MemberController extends AbstractPluginController
 
     public function put(Request $request, Response $response, ?string $uid): Response
     {
-        $newMemberDatas = $request->getParsedBodyParam('member');
+        $newMemberDatas = RequestHelper::getParsedBodyParam($request, 'member');
         $member = self::newMember();
 
         if (!$member->load((int) $uid)) {
             Debug::log("Member [{$uid}] load failed");
 
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('Member load failed')]
@@ -178,7 +183,7 @@ final class MemberController extends AbstractPluginController
         }
 
         if (!$member->canEdit(MemberHelper::getLoggedMember())) {
-            return $response->withJson([
+            return JsonResponse::withJson($response, [
                 'status' => 'error',
                 'message' => _T("Logged user can't edit this member")
             ])->withStatus(403);
@@ -188,24 +193,26 @@ final class MemberController extends AbstractPluginController
             $mf = MemberHelper::findMember(['email' => \trim($newMemberDatas['email'])]);
 
             if (\count($mf) > 0) {
-                return $response->withJson([
+                return JsonResponse::withJson($response, [
                     'status' => 'error',
                     'message' => _T('Email already exist'),
                     'uid' => $mf[0]->id,
                 ])->withStatus(409);
             }
         }
+
         $this->memberModify($member, $newMemberDatas);
 
         if (!$member->store()) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('Error when storing member')]
             )->withStatus(409);
         }
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => _T('Set ') . \implode(', ', \array_keys($newMemberDatas))
         ]);
@@ -213,14 +220,17 @@ final class MemberController extends AbstractPluginController
 
     public function delete(Request $request, Response $response, ?string $uid): Response
     {
-        $member = self::newMember(); /* new Adherent($this->zdb);
+        $member = self::newMember(); /*
+            * new Adherent($this->zdb);
             $member->enableAllDeps();
-            $member->setDependencies($this->preferences, $this->members_fields, $this->history);*/
+            $member->setDependencies($this->preferences, $this->members_fields, $this->history);
+            */
 
         if (!$member->load((int) $uid)) {
             Debug::log("Member [{$uid}] does not exist");
 
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('Member load failed')]
@@ -228,7 +238,7 @@ final class MemberController extends AbstractPluginController
         }
 
         if (!$member->canEdit(MemberHelper::getLoggedMember())) {
-            return $response->withJson([
+            return JsonResponse::withJson($response, [
                 'status' => 'error',
                 'message' => _T("Logged user can't remove this member")
             ])->withStatus(403);
@@ -238,7 +248,7 @@ final class MemberController extends AbstractPluginController
         $members = new Members($filters);
         $members->removeMembers([$uid]);
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => _T('Member is deleted ') . $uid
         ]);
@@ -253,20 +263,20 @@ final class MemberController extends AbstractPluginController
             $login->logIn($params['login'], $params['password']);
 
             if ($login->isLogged()) {
-                return $response->withJson([
+                return JsonResponse::withJson($response, [
                     'status' => 'success',
                     'uid' => $login->id
                 ]);
             }
         }
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'error',
             'uid' => 0
         ]);
     }
 
-    //Find user by :
+    // Find user by :
     // - email
     // - id_adh+zipcode
     public function find(Request $request, Response $response): Response
@@ -276,28 +286,31 @@ final class MemberController extends AbstractPluginController
         $r = MemberHelper::findMember($params);
         /*
                     if (!$r) {
-                        return $response->withJson(
+                        return JsonResponse::withJson($response,
                             [
                                 'status' => 'error',
                                 'message' => _T('Invalid request')
                             ]
                         )->withStatus(200);
-                    }*/
+                    }
+         */
 
         if ($r && \count($r) > 0) {
-            return $response->withJson([
+            return JsonResponse::withJson($response, [
                 'status' => 'success',
                 'uid' => $r[0]->id
             ]);
         }
 
-        $rep = $response->withJson(
+        $rep = JsonResponse::withJson(
+            $response,
             [
                 'status' => 'error',
                 'message' => _T('Member not found')
             ]
         );
-        //return error 401 if not found
+
+        // return error 401 if not found
         if (isset($params['error401'])) {
             $rep->withStatus(401);
         }
@@ -321,7 +334,8 @@ final class MemberController extends AbstractPluginController
         $adh = new Adherent($this->zdb, $login);
 
         if (isset($params->error401) && !$adh->id) {
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('Member not found')
@@ -332,7 +346,8 @@ final class MemberController extends AbstractPluginController
         $ac = new AuthController($this->container);
         $r = $ac->retrievePassword($request->withParsedBody(['login' => $login]), $response);
 
-        return $response->withJson(
+        return JsonResponse::withJson(
+            $response,
             [
                 'status' => 'success',
                 'message' => _T('Un email vous a été envoyé si votre identifiant est correct.') . (!$adh->id ? '..' : '')
@@ -340,7 +355,7 @@ final class MemberController extends AbstractPluginController
         );
     }
 
-    //Notify a member by mail
+    // Notify a member by mail
     public function mail(Request $request, Response $response, string $uid): Response
     {
         $params = (object) $request->getParsedBody();
@@ -357,14 +372,16 @@ final class MemberController extends AbstractPluginController
                 }
 
                 if (!$member->id) {
-                    return $response->withJson(
+                    return JsonResponse::withJson(
+                        $response,
                         [
                             'status' => 'error',
                             'message' => _T('Member not found')
                         ]
                     )->withStatus(401);
                 }
-                //$emails[$member->email] = $member->email;
+
+                // $emails[$member->email] = $member->email;
                 $emails[$member->email] = $member->sfullname;
             } else {
                 $emails = $mailNotify->getMailsStaff();
@@ -375,7 +392,8 @@ final class MemberController extends AbstractPluginController
                 $emails,
                 $params->body
             )) {
-                return $response->withJson(
+                return JsonResponse::withJson(
+                    $response,
                     [
                         'status' => 'success',
                         'message' => _T('The mail has been sent.')
@@ -383,7 +401,8 @@ final class MemberController extends AbstractPluginController
                 );
             }
 
-            return $response->withJson(
+            return JsonResponse::withJson(
+                $response,
                 [
                     'status' => 'error',
                     'message' => _T('The mail was not sent.')
@@ -391,7 +410,8 @@ final class MemberController extends AbstractPluginController
             )->withStatus(401);
         }
 
-        return $response->withJson(
+        return JsonResponse::withJson(
+            $response,
             [
                 'status' => 'error',
                 'message' => _T('Invalid request')
@@ -412,14 +432,14 @@ final class MemberController extends AbstractPluginController
     {
         $members_fields = $this->members_fields;
 
-        //get all properties names
+        // get all properties names
         $fields = MemberHelper::getAvailableFields($members_fields);
         $fields[] = 'password';
 
-        //get all dynamicfields
+        // get all dynamicfields
         $fieldsDyn = MemberHelper::getAvailableDynamicFields(self::newMember());
 
-        //check if valid names
+        // check if valid names
         foreach ($newMemberDatas as $k => $v) {
             if (!\in_array($k, $fields, true) && !\in_array($k, $fieldsDyn, true)) {
                 throw new \Exception(_T('Invalid field name :') . $k);
@@ -427,7 +447,7 @@ final class MemberController extends AbstractPluginController
         }
 
         foreach ($newMemberDatas as $k => $v) {
-            //convert to db name
+            // convert to db name
             $dbFieldName = MemberHelper::getDbFieldName($members_fields, $k);
 
             if ($dbFieldName) {
@@ -441,19 +461,21 @@ final class MemberController extends AbstractPluginController
             }
         }
 
-        $r2['is_company'] = 1; //Evite la supression de la propriété company_name
-        //$t = $member->getDynamicFields()->getValues(1);
+        $r2['is_company'] = 1; // Evite la supression de la propriété company_name
+        // $t = $member->getDynamicFields()->getValues(1);
 
         $member->check($r2, [], []);
 
-        /*foreach ($r2 as $k => $v) {
+        /*
+         * foreach ($r2 as $k => $v) {
             $member->validate($k, $v, []);
-        }*/
+        }
+         */
     }
 
     private function removeNewsletterFree($email): void
     {
-        //si la personne est adhérente, l'adresse email ne doit pas être dans la newsletter libre (doublon)
+        // si la personne est adhérente, l'adresse email ne doit pas être dans la newsletter libre (doublon)
         foreach (\explode(',', $this->config->get('newsletter.subscribeclass')) as $t) {
             switch ($t) {
                 case 'Basic':

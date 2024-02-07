@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -34,40 +34,45 @@ namespace GaletteRESTAPI\Controllers;
 
 use Galette\Controllers\AbstractPluginController;
 use Galette\Entity\Adherent;
+use GaletteRESTAPI\Tools\JsonResponse;
+use GaletteRESTAPI\Tools\RequestHelper;
 use Psr\Container\ContainerInterface;
-use Slim\Http\Request;
-use Slim\Http\Response;
+use Slim\Psr7\Request;
+use Slim\Psr7\Response;
 
 final class LoginController extends AbstractPluginController
 {
     /**
      * @Inject("Plugin Galette RESTAPI")
      */
+    private $config;
 
     // constructor receives container instance
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
+        $this->config = $container->get('config');
     }
 
     public function home(Request $request, Response $response): Response
     {
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'message' => 'Plugin ' . RESTAPI_PREFIX . ' is ready',
-            'php' => \PHP_VERSION
+            'php' => \PHP_VERSION,
+            'asso' => $this->config->get('association.name')
         ]);
     }
 
     public function login(Request $request, Response $response): Response
     {
-        $nick = $request->getParsedBodyParam('login', '');
-        $password = $request->getParsedBodyParam('password', '');
+        $nick = RequestHelper::getParsedBodyParam($request, 'login', '');
+        $password = RequestHelper::getParsedBodyParam($request, 'password', '');
 
         $preferences = $this->preferences;
 
         if (\trim($nick) !== '' && \trim($password) !== '') {
-            //Log with nick & pass
+            // Log with nick & pass
             if ($nick === $preferences->pref_admin_login) {
                 $pw_superadmin = \password_verify(
                     $password,
@@ -94,7 +99,7 @@ final class LoginController extends AbstractPluginController
                 $member->load($this->login->id);
 
                 if (!$member->isStaff() && !$member->isAdmin()) {
-                    return $response->withJson([
+                    return JsonResponse::withJson($response, [
                         'status' => 'error',
                         'message' => _T('This user is not a admin or a staff member'),
                         'uid' => $member->id
@@ -114,13 +119,14 @@ final class LoginController extends AbstractPluginController
                     'scope' => $scope
                 ]);
 
-                return $response->withJson(['status' => 'success', 'token' => $token]);
+                return JsonResponse::withJson($response, ['status' => 'success', 'token' => $token]);
             }
         }
 
         $this->history->add(_T('Authentication failed : '), $nick);
 
-        return $response->withJson(
+        return JsonResponse::withJson(
+            $response,
             [
                 'status' => 'error',
                 'message' => _T('Authentication failed')]
@@ -131,7 +137,7 @@ final class LoginController extends AbstractPluginController
     {
         $jwtToken = (object) $request->getAttribute('jwt_data');
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'login_uid' => $jwtToken->login_uid,
             'username' => $jwtToken->username,

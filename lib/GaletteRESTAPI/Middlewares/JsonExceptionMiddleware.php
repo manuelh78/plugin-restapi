@@ -30,15 +30,52 @@ declare(strict_types=1);
  *  @license   http://www.gnu.org/licenses/gpl-3.0.html GPL License 3.0
  */
 
-namespace GaletteRESTAPI\Tools;
+namespace GaletteRESTAPI\Middlewares;
 
-final class Exception
+use GaletteRESTAPI\Tools\Debug;
+use GaletteRESTAPI\Tools\JsonResponse;
+use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Slim\Psr7\Factory\StreamFactory;
+use Slim\Psr7\Response;
+
+final class JsonExceptionMiddleware
 {
-    public static function returnException($response, $e)
+    private $container;
+
+    public function __construct(ContainerInterface $container)
     {
+        $this->container = $container;
+    }
+
+    public function __invoke(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        try {
+            $response = $handler->handle($request);
+            $body = (string) $response->getBody();
+
+            if (RESTAPI_DEBUG) {
+                Debug::log("   - API return :'{$body}'");
+            }
+
+            return $response;
+        } catch (\Exception $exception) {
+            return self::returnException($exception);
+        } catch (\Throwable $exception) {
+            return self::returnException($exception);
+        }
+    }
+
+    public static function returnException($e)
+    {
+        $response = new Response();  
+
         Debug::error("Exception : {$e}");
 
-        return $response->withJson(
+        return JsonResponse::withJson(
+            $response,
             [
                 'status' => 'error',
                 'message' => $e->getMessage(),

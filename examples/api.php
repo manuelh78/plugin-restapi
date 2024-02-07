@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -36,8 +36,8 @@ require '../lib/GaletteRESTAPI/Tools/Http.php';
 
 use GaletteRESTAPI\Tools\Http;
 
-$config = \Noodlehaus\Config::load(\realpath('.') . '/../config/config.yml', new \Noodlehaus\Parser\Yaml());
-$cryptokey = \Defuse\Crypto\Key::loadFromAsciiSafeString($config->get('cryptokey'));
+$config = Noodlehaus\Config::load(\realpath('.') . '/../config/config.yml', new Noodlehaus\Parser\Yaml());
+$cryptokey = Defuse\Crypto\Key::loadFromAsciiSafeString($config->get('cryptokey'));
 
 function http($url, $method, $postdata, $token = '', $contentType = Http::DATA_JSON)
 {
@@ -62,18 +62,20 @@ function test($name, $response)
         }
 
         if (isset($datas->token)) {
-            $jwt = new \GaletteRESTAPI\Tools\JWTHelper('../config');
+            $jwt = new GaletteRESTAPI\Tools\JWTHelper('../config');
 
             $datas->jwt = $jwt->decode($datas->token);
             echo 'token jwt : <br>';
             \var_dump($datas->jwt);
         }
+
         global $cryptokey;
 
         if (isset($datas->results)) {
-            $datas->results = (object) \json_decode(\Defuse\Crypto\Crypto::decrypt($datas->results, $cryptokey));
+            $datas->results = (object) \json_decode(Defuse\Crypto\Crypto::decrypt($datas->results, $cryptokey));
             \var_dump($datas->results);
         }
+
         echo '<br><br>';
 
         return $datas;

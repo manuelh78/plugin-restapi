@@ -16,8 +16,8 @@ $datas = test(
         $urlAPIREST . '/api/login',
         'POST',
         [
-            'login' => 'test',
-            'password' => 'testtest'
+            'login' => $login_nick,
+            'password' => $login_password,
         ]
     )
 );

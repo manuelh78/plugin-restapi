@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -38,7 +38,7 @@ final class Security
     {
         if (false === (null === $postValues)) {
             foreach ($postValues as $k => &$pv) {
-                $pv = \filter_var($pv, \FILTER_SANITIZE_STRING);
+                $pv = self::sanitizeFilterString($pv, []);
             }
 
             return $postValues;
@@ -49,7 +49,10 @@ final class Security
 
     public static function sanitize_var(&$text)
     {
-        \filter_var($text, \FILTER_SANITIZE_STRING) . 'x';
+        // \filter_var($text, \FILTER_SANITIZE_STRING) . 'x';
+        if (\is_string($text)) {
+            $text = self::sanitizeFilterString($text);
+        }
 
         return $text;
     }
@@ -67,5 +70,25 @@ final class Security
         }
 
         return $random_string;
+    }
+
+    private static function sanitizeFilterString($value, array $flags = []): string
+    {
+        $noQuotes = \in_array(\FILTER_FLAG_NO_ENCODE_QUOTES, $flags, true);
+        $options = ($noQuotes ? \ENT_NOQUOTES : \ENT_QUOTES) | \ENT_SUBSTITUTE;
+        $optionsDecode = ($noQuotes ? \ENT_QUOTES : \ENT_NOQUOTES) | \ENT_SUBSTITUTE;
+
+        // Strip the tags
+        $value = \strip_tags($value);
+
+        // Run the replacement for FILTER_SANITIZE_STRING
+        $value = \htmlspecialchars($value, $options);
+
+        // Fix that HTML entities are converted to entity numbers instead of entity name (e.g. ' -> &#34; and not ' -> &quote;)
+        // https://stackoverflow.com/questions/64083440/use-php-htmlentities-to-convert-special-characters-to-their-entity-number-rather
+        $value = \str_replace(['&quot;', '&#039;'], ['&#34;', '&#39;'], $value);
+
+        // Decode all entities
+        return \html_entity_decode($value, $optionsDecode);
     }
 }

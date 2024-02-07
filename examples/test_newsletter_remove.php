@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -41,7 +41,7 @@ require 'config.php';
 $token = '';
 $codeValid = 0;
 
-//---
+// ---
 
 $datas = test(
     'Login OK user login:test password:testtest',
@@ -49,8 +49,8 @@ $datas = test(
         $urlAPIREST . '/api/login',
         'POST',
         [
-            'login' => 'test',
-            'password' => 'testtest'
+            'login' => $login_nick,
+            'password' => $login_password,
         ]
     )
 );

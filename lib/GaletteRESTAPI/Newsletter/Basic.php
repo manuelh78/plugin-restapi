@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace GaletteRESTAPI\Newsletter;
 
- //Newsletter sans être inscrit dans galette
+// Newsletter sans être inscrit dans galette
 final class Basic implements NewsletterInterface
 {
     private $table_prefix;
@@ -52,7 +52,7 @@ final class Basic implements NewsletterInterface
     public function subscribe($email, $userdata = null): int
     {
         try {
-            //table newsletter ?
+            // table newsletter ?
             $select = $this->zdb->sql->select('newsletter');
             $select->where(['email' => $email]);
             $ret = $this->zdb->execute($select);
@@ -65,11 +65,11 @@ final class Basic implements NewsletterInterface
         }
 
         try {
-            //insert email
+            // insert email
             $insert = $this->zdb->sql->insert('newsletter');
             $insert->values(['email' => $email, 'valid' => 0, 'userdata' => $userdata, 'date' => new \Laminas\Db\Sql\Expression('NOW()')]);
 
-            //$sql = $this->zdb->sql->getSqlStringForSqlObject($insert);
+            // $sql = $this->zdb->sql->getSqlStringForSqlObject($insert);
 
             $add = $this->zdb->execute($insert);
             $newId = $this->zdb->driver->getLastGeneratedValue();
@@ -77,24 +77,24 @@ final class Basic implements NewsletterInterface
             throw new \Exception(_T("Une erreur est survenue lors de l'ajout de l'adresse dans la table des non inscrits."));
         }
 
-        return (int)$newId;
+        return (int) $newId;
     }
 
-    public function confirm($email /*,$nid*/): bool
+    public function confirm($email /* ,$nid */): bool
     {
         $select = $this->zdb->sql->select('newsletter');
-        $select->where(['valid' => 1, /*'id' => $nid,*/ 'email' => $email]);
+        $select->where(['valid' => 1, /* 'id' => $nid, */ 'email' => $email]);
         $find = $this->zdb->execute($select);
 
         if ($find->count() > 0) {
             throw new \Exception(_T('Votre adresse a déjà été validée !'));
         }
 
-        //update 'valid' column for this email&id
+        // update 'valid' column for this email&id
         $update = $this->zdb->sql->update('newsletter');
-        $update->set(['valid' => 1])->where([/*'id' => $nid,*/ 'email' => $email]);
+        $update->set(['valid' => 1])->where([/* 'id' => $nid, */ 'email' => $email]);
 
-        //$sql = $this->zdb->sql->getSqlStringForSqlObject($update);
+        // $sql = $this->zdb->sql->getSqlStringForSqlObject($update);
 
         $changed = $this->zdb->execute($update);
 

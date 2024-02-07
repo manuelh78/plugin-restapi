@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -36,6 +36,8 @@ require '../vendor/autoload.php';
 
 require 'api.php';
 
+require 'config.php';
+
 $token = '';
 $UID = 262;
 
@@ -43,8 +45,8 @@ $datas = test('Login OK user login:test password:testtest', http(
     $urlAPIREST . '/api/login',
     'POST',
     [
-        'login' => 'test',
-        'password' => 'testtest'
+        'login' => $login_nick,
+        'password' => $login_password,
     ]
 ));
 $token = $datas->token;

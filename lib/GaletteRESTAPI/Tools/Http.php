@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -48,30 +48,38 @@ final class Http
         return \pack('H*', $hex);
     }
 
-    public static function request($url, $method, $postdata = [], $contentType = self::DATA_XFORM, $token = null)
+    public static function request($url, $method, $postdata = [], $contentType = self::DATA_XFORM, $token = null): ?string
     {
         if ('application/json' === $contentType) {
-            $postdata = \json_encode($postdata);
+            $data_string = \json_encode($postdata);
         } else {
-            $postdata = \http_build_query($postdata);
+            $data_string = \http_build_query($postdata);
         }
 
-        $header = 'Content-Type: ' . $contentType;
-
-        if ($token) {
-            $header .= "\r\nAuthorization: Bearer {$token}";
-        }
-        $opts = [
-            'http' => [
-                'method' => $method,
-                'header' => $header,
-                'content' => $postdata,
-                'ignore_errors' => true
-            ]
+        $headers = [
+            "Content-Type:{$contentType}",
+            'Content-Length: ' . \strlen($data_string),
         ];
 
-        $context = \stream_context_create($opts);
+        if ($token) {
+            $headers[] = "Authorization: Bearer {$token}";
+        }
 
-        return \file_get_contents($url, false, $context);
+        $ch = \curl_init($url);
+
+        \curl_setopt_array($ch, [
+            \CURLOPT_POST => \strtoupper($method) !== 'GET',
+            \CURLOPT_CUSTOMREQUEST => \strtoupper($method),
+            \CURLOPT_POSTFIELDS => $data_string,
+            \CURLOPT_HEADER => false,
+            \CURLOPT_HTTPHEADER => $headers,
+            \CURLOPT_RETURNTRANSFER => true
+        ]);
+
+        $result = \curl_exec($ch);
+        $cur_info = \curl_getinfo($ch);
+        \curl_close($ch);
+
+        return $result;
     }
 }

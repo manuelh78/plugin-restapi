@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -34,45 +34,46 @@ use GaletteRESTAPI\Controllers\LoginController;
 use GaletteRESTAPI\Controllers\MemberController;
 use GaletteRESTAPI\Controllers\MembersController;
 use GaletteRESTAPI\Controllers\NewsletterController;
-use GaletteRESTAPI\Middlewares\ExceptionMiddleware;
 use GaletteRESTAPI\Middlewares\HeaderAccessControlMiddleware;
+use GaletteRESTAPI\Middlewares\JsonExceptionMiddleware;
 use GaletteRESTAPI\Middlewares\JwtLoginMiddleware;
-use Slim\App;
+use Slim\Routing\RouteCollectorProxy;
 use Tuupola\Middleware\JwtAuthentication;
 
-//Include specific classes
+// Include specific classes
 require_once 'vendor/autoload.php';
 
-//Constants and classes from plugin
+// Constants and classes from plugin
 require_once $module['root'] . '/_config.inc.php';
 
 require_once '_dependencies.php';
 
-//free routes, no token
-$this->group('', function (App $app): void {
-    $this->get('/home', [LoginController::class, 'home'])->setName(RESTAPI_PREFIX . '_home');
-    $this->post('/api/login', [LoginController::class, 'login'])->setName(RESTAPI_PREFIX . '_login');
+$app->get('/[home]', [LoginController::class, 'home'])->setName(RESTAPI_PREFIX . '_home');
 
-    //call by javascript :
-    $this->post('/api/member/find', [MemberController::class, 'find'])->setName(RESTAPI_PREFIX . '_member_find');
-    $this->post('/api/member/canlogin', [MemberController::class, 'canlogin'])->setName(RESTAPI_PREFIX . '_member_canlogin');
-    $this->post('/api/member/passwordlost', [MemberController::class, 'passwordlost'])->setName(RESTAPI_PREFIX . '_member_password_lost');
+// free routes, no token
+$app->group('', function (RouteCollectorProxy $app): void {
+    $app->post('/api/login', [LoginController::class, 'login'])->setName(RESTAPI_PREFIX . '_login');
 
-    //call by submit form :
-    $this->post('/api/newsletter', [NewsletterController::class, 'add'])->setName(RESTAPI_PREFIX . '_newsletter_add');
+    // call by javascript :
+    $app->post('/api/member/find', [MemberController::class, 'find'])->setName(RESTAPI_PREFIX . '_member_find');
+    $app->post('/api/member/canlogin', [MemberController::class, 'canlogin'])->setName(RESTAPI_PREFIX . '_member_canlogin');
+    $app->post('/api/member/passwordlost', [MemberController::class, 'passwordlost'])->setName(RESTAPI_PREFIX . '_member_password_lost');
 
-    //call by email link :
-    $this->get('/api/newsletter/confirm_add/{codeValid:[0-9a-z]+}', [NewsletterController::class, 'confirm_add'])->setName(RESTAPI_PREFIX . '_newsletter_confirm_add');
-    $this->get('/api/newsletter/confirm_remove/{codeValid:[0-9a-z]+}', [NewsletterController::class, 'confirm_remove'])->setName(RESTAPI_PREFIX . '_newsletter_confirm_remove');
+    // call by submit form :
+    $app->post('/api/newsletter', [NewsletterController::class, 'add'])->setName(RESTAPI_PREFIX . '_newsletter_add');
+
+    // call by email link :
+    $app->get('/api/newsletter/confirm_add/{codeValid:[0-9a-z]+}', [NewsletterController::class, 'confirm_add'])->setName(RESTAPI_PREFIX . '_newsletter_confirm_add');
+    $app->get('/api/newsletter/confirm_remove/{codeValid:[0-9a-z]+}', [NewsletterController::class, 'confirm_remove'])->setName(RESTAPI_PREFIX . '_newsletter_confirm_remove');
 })
     ->add(HeaderAccessControlMiddleware::class)
-    ->add(ExceptionMiddleware::class);
+    ->add(JsonExceptionMiddleware::class);
 
-//These routes require a token:
-$this->group('/api', function (App $app): void {
+// These routes require a token:
+$app->group('/api', function (RouteCollectorProxy $app): void {
     $app->get('/whoami', [LoginController::class, 'whoami'])->setName(RESTAPI_PREFIX . '_whoami');
 
-    $app->group('/member', function (App $app): void {
+    $app->group('/member', function (RouteCollectorProxy $app): void {
         $app->get('/{uid:[0-9]+}', [MemberController::class, 'get'])->setName(RESTAPI_PREFIX . '_member_get');
         $app->post('', [MemberController::class, 'post'])->setName(RESTAPI_PREFIX . '_member_post');
         $app->map(['PUT', 'PATCH'], '/{uid:[0-9]+}', [MemberController::class, 'put'])->setName(RESTAPI_PREFIX . '_member_put');
@@ -90,4 +91,4 @@ $this->group('/api', function (App $app): void {
     ->add(JwtLoginMiddleware::class)
     ->add(JwtAuthentication::class)
     ->add(HeaderAccessControlMiddleware::class)
-    ->add(ExceptionMiddleware::class);
+    ->add(JsonExceptionMiddleware::class);

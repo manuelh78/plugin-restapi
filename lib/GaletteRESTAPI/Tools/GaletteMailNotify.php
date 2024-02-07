@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -73,7 +73,7 @@ final class GaletteMailNotify extends GaletteMail
                 $this->history->add($txt);
             }
 
-            //Mails are disabled... We log (not safe, but)...
+            // Mails are disabled... We log (not safe, but)...
             Analog::log(
                 'GaletteMailNotify::notify() has failed. Here was the data: ' .
                 "\n" . \print_r([$title, $body], true),
@@ -90,13 +90,13 @@ final class GaletteMailNotify extends GaletteMail
         $this->attachments[] = new GaletteMail_SFile($att);
     }
 
-    //liste des membres du staff voulant être notifiés; ajouter #ADH_NOTIFY# dans la fiche
+    // liste des membres du staff voulant être notifiés; ajouter #ADH_NOTIFY# dans la fiche
     public function getMailsStaff()
     {
         $ret = [];
-        //if (1) return ["XXXdev@ik.me" => "M. X Manuel"];
+        // if (1) return ["XXXdev@ik.me" => "M. X Manuel"];
 
-        //FIXME : use a galette group
+        // FIXME : use a galette group
         $m = new Members();
         $staffMembers = $m->getStaffMembersList(true);
 
@@ -105,10 +105,10 @@ final class GaletteMailNotify extends GaletteMail
             if (
                 \preg_match('/@/', $member->email)
                 && \preg_match('/#ADH_NOTIFY#/', $member->others_infos_admin)
-                ) {
+            ) {
                 $ret[$member->email] = $member->sfullname;
             }
-            //echo $member->others_infos_admin;
+            // echo $member->others_infos_admin;
         }
 
         return $ret;
@@ -123,6 +123,7 @@ final class GaletteMailNotify extends GaletteMail
         foreach ($this->preferences->vpref_email_newadh as $pref_email) {
             $recipients[$pref_email] = $pref_email;
         }
+
         $this->setRecipients($recipients);
 
         $this->setMessage($message);
@@ -137,7 +138,8 @@ final class GaletteMailNotify extends GaletteMail
                 );
                 $this->history->add($txt);
             }
-            //Mails are disabled... We log (not safe, but)...
+
+            // Mails are disabled... We log (not safe, but)...
             Analog::log(
                 'GaletteMailNotify::error() has failed. Here was the data: ' .
                 "\n" . \print_r([$title, $message], true),

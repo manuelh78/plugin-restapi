@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -43,7 +43,7 @@ echo '<h1>A page somewhere on your web site...</h1>';
 $codeValid = \strrchr($_SERVER['REQUEST_URI'], '/');
 $codeValid = \substr($codeValid, 1);
 
-//$codeValid = "def502007f3e1a8.....78ab90cd4b4cece87bb8ac5";
+// $codeValid = "def502007f3e1a8.....78ab90cd4b4cece87bb8ac5";
 
 $response = http(
     $urlAPIREST . '/api/newsletter/confirm_remove/' . $codeValid,
@@ -63,6 +63,7 @@ if (isset($datas->message)) {
 if (isset($datas->tables)) {
     echo 'Find in tables SQL : ' . \implode(', ', $datas->tables) . "<br>\n";
 }
+
 echo '</h4>';
 
 echo '<hr>';

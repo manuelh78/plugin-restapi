@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -36,9 +36,10 @@ use Galette\Controllers\AbstractPluginController;
 use Galette\DynamicFields\DynamicField;
 use Galette\Filters\AdvancedMembersList;
 use Galette\Repository\Members;
+use GaletteRESTAPI\Tools\JsonResponse;
 use Psr\Container\ContainerInterface;
-use Slim\Http\Request;
-use Slim\Http\Response;
+use Slim\Psr7\Request;
+use Slim\Psr7\Response;
 
 final class MembersController extends AbstractPluginController
 {
@@ -56,7 +57,7 @@ final class MembersController extends AbstractPluginController
         $this->config = $container->get('config');
     }
 
-    public function emails(Request $request, Response $response/*, ?string $sources*/): Response
+    public function emails(Request $request, Response $response/* , ?string $sources */): Response
     {
         $params = (object) $request->getParsedBody();
 
@@ -70,60 +71,62 @@ final class MembersController extends AbstractPluginController
 
         foreach ($sources as $source) {
             switch ($source) {
-                    case 'galette':
-                        $filters = new AdvancedMembersList();
-                        $adml = new AdvancedMembersList();
-                        $free_search = [];
+                case 'galette':
+                    $filters = new AdvancedMembersList();
+                    $adml = new AdvancedMembersList();
+                    $free_search = [];
 
-                        $free_search[] = [
-                            'idx' => '1',
-                            'type' => DynamicField::TEXT,
-                            'field' => 'email_adh',
-                            'search' => '',
-                            'log_op' => AdvancedMembersList::OP_AND,
-                            'qry_op' => AdvancedMembersList::OP_NOT_EQUALS
-                        ];
+                    $free_search[] = [
+                        'idx' => '1',
+                        'type' => DynamicField::TEXT,
+                        'field' => 'email_adh',
+                        'search' => '',
+                        'log_op' => AdvancedMembersList::OP_AND,
+                        'qry_op' => AdvancedMembersList::OP_NOT_EQUALS
+                    ];
 
-                        $free_search[] = [
-                            'idx' => '2',
-                            'type' => DynamicField::TEXT,
-                            'field' => 'activite_adh',
-                            'search' => 1,
-                            'log_op' => AdvancedMembersList::OP_AND,
-                            'qry_op' => AdvancedMembersList::OP_EQUALS
-                        ];
+                    $free_search[] = [
+                        'idx' => '2',
+                        'type' => DynamicField::TEXT,
+                        'field' => 'activite_adh',
+                        'search' => 1,
+                        'log_op' => AdvancedMembersList::OP_AND,
+                        'qry_op' => AdvancedMembersList::OP_EQUALS
+                    ];
 
-                        $adml->__set('free_search', $free_search);
-                        $members = new Members($adml);
-                        $results = $members->getMembersList(false, ['email_adh'], true, false, false, false, false);
+                    $adml->__set('free_search', $free_search);
+                    $members = new Members($adml);
+                    $results = $members->getMembersList(false, ['email_adh'], true, false, false, false, false);
 
-                        foreach ($results as $r) {
-                            if (\mb_strpos($r->email_adh, '@')) {
-                                $emails[] = $r->email_adh;
-                            }
+                    foreach ($results as $r) {
+                        if (\mb_strpos($r->email_adh, '@')) {
+                            $emails[] = $r->email_adh;
                         }
+                    }
 
-                        break;
+                    break;
 
-                    default:
-                        $className = '\\GaletteRESTAPI\\Newsletter\\' . \ucfirst($source);
-                        $application = new $className($this->zdb, $this->config);
-                        $results = $application->getEmails();
-                        $emails = \array_merge($emails, $results);
+                default:
+                    $className = '\\GaletteRESTAPI\\Newsletter\\' . \ucfirst($source);
+                    $application = new $className($this->zdb, $this->config);
+                    $results = $application->getEmails();
+                    $emails = \array_merge($emails, $results);
 
-                        break;
-                }
+                    break;
+            }
         }
 
         $emails = \array_unique($emails);
 
-        /*$jwt = new \GaletteRESTAPI\Tools\JWTHelper();
+        /*
+         * $jwt = new \GaletteRESTAPI\Tools\JWTHelper();
         $ret = $jwt->encode(
             $ret
-        );*/
+        );
+         */
         $results = \Defuse\Crypto\Crypto::encrypt(\json_encode($emails), $this->container->get('cryptokey'));
 
-        return $response->withJson([
+        return JsonResponse::withJson($response, [
             'status' => 'success',
             'results' => $results
         ]);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Plugin RESTAPI for Galette Project
  *
- *  PHP version >=7.4
+ *  PHP version >=8.1
  *
  *  This file is part of 'Plugin RESTAPI for Galette Project'.
  *
@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace GaletteRESTAPI\Newsletter;
 
-//Original source : phplist project
+// Original source : phplist project
 
 final class PhpList implements NewsletterInterface
 {
@@ -101,6 +101,7 @@ final class PhpList implements NewsletterInterface
         if ($listId) {
             $sql .= " AND listid='" . \addslashes($listId) . "'";
         }
+
         $this->db->query($sql)->execute();
 
         // add a note saying we unsubscribed them manually
@@ -111,8 +112,10 @@ final class PhpList implements NewsletterInterface
 
         $this->db->query($sql)->execute();
 
-        $sql = 'SELECT  COUNT(*) FROM ' . $this->tablePrefix . "listuser
-               WHERE userid='" . \addslashes($userId) . "'";
+        $sql = 'SELECT  COUNT(*) FROM ' . $this->tablePrefix . <<<'EOD'
+listuser
+               WHERE userid='
+EOD . \addslashes($userId) . "'";
 
         if (\count($this->db->query($sql)->execute()) < 1) {
             // get the new user id
