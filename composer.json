@@ -19,7 +19,7 @@
         "hassankhan/config": "^3",
         "symfony/yaml": "^5.3",
         "tuupola/slim-jwt-auth": "^3.7",
-      
+        "psr/log": "^1.0",
         "twig/twig": "^3.8",
         "defuse/php-encryption": "^2.4",
         "psr/http-message": "^1.0",
