@@ -36,15 +36,19 @@ final class Security
 {
     public static function sanitize_array($postValues): ?array
     {
-        if (false === (null === $postValues)) {
-            foreach ($postValues as $k => &$pv) {
-                $pv = self::sanitizeFilterString($pv, []);
-            }
-
-            return $postValues;
+        if (!$postValues) {
+            return null;
         }
 
-        return null;
+        foreach ($postValues as $k => &$pv) {
+            if (!\is_array($pv)) {
+                $pv = self::sanitizeFilterString($pv, []);
+            } else {
+                $pv = self::sanitize_array($pv);
+            }
+        }
+
+        return $postValues;
     }
 
     public static function sanitize_var(&$text)
