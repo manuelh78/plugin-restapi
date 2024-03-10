@@ -58,14 +58,14 @@ final class NewsletterController extends AbstractPluginController
     // 192.168.1.99/gestion/galette/webroot/plugins/restapi/api/newsletter/add
     public function add(Request $request, Response $response): Response
     {
-        $params = (object) $request->getParsedBody();
+        $params = (object) Security::sanitize_array($request->getParsedBody());
 
         if (!isset($params->urlcallback)) {
             throw new \Exception(_T('urlcallback is not set.'));
         }
 
         $email = isset($params->email) ? \trim(\filter_var($params->email, \FILTER_VALIDATE_EMAIL)) : '';
-        $userdata = isset($params->userdata) ? \filter_var($params->userdata, \FILTER_SANITIZE_STRING) : null;
+        $userdata = $params->userdata ?? ''; 
 
         if (!$email) {
             return JsonResponse::withJson(
@@ -270,7 +270,6 @@ final class NewsletterController extends AbstractPluginController
         }
 
         // Autres
-
         foreach (\explode(',', $this->config->get('newsletter.unsubscribeclass')) as $t) {
             $bOk = false;
             $className = '\\GaletteRESTAPI\\Newsletter\\' . \ucfirst($t);
