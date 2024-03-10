@@ -36,8 +36,8 @@ namespace GaletteRESTAPI\Newsletter;
 
 final class PhpList implements NewsletterInterface
 {
-    private $table_prefix;
-    private $usertable_prefix;
+    private $tablePrefix;
+    private $userTablePrefix;
     private $zdb;
 
     public function __construct($zdb, $config)
@@ -96,7 +96,7 @@ final class PhpList implements NewsletterInterface
         }
 
         // unsubscribe them
-        $sql = 'DELETE FROM ' . $this->tablePrefix . "listuser WHERE userid='" . \addslashes($userId) . "'";
+        $sql = 'DELETE FROM ' . $this->tablePrefix . "listuser WHERE userid={$userId}";
 
         if ($listId) {
             $sql .= " AND listid='" . \addslashes($listId) . "'";
@@ -112,12 +112,12 @@ final class PhpList implements NewsletterInterface
 
         $this->db->query($sql)->execute();
 
-        $sql = 'SELECT  COUNT(*) FROM ' . $this->tablePrefix . <<<'EOD'
-listuser
-               WHERE userid='
-EOD . \addslashes($userId) . "'";
+        // If this user dont't use another list, delete it
+        $sql = 'SELECT COUNT(*) as count FROM ' . $this->tablePrefix . "listuser WHERE userid={$userId} ";
+        $results = $this->db->query($sql)->execute();
+        $result = $results->current();
 
-        if (\count($this->db->query($sql)->execute()) < 1) {
+        if (1 > $result['count']) {
             // get the new user id
             $sql = 'DELETE FROM ' . $this->userTablePrefix . "user WHERE id='" . $userId . "' ";
 
