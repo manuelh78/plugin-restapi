@@ -167,7 +167,7 @@ final class NewsletterController extends AbstractPluginController
             throw new \Exception(_T('urlcallback is not set.'));
         }
 
-        $email = isset($params->email) ? \trim(\filter_var($params->email, \FILTER_VALIDATE_EMAIL)) : null;
+        $email = isset($params->email) ? \filter_var(\trim($params->email), \FILTER_VALIDATE_EMAIL) : null;
 
         if (!$email) {
             return JsonResponse::withJson(
