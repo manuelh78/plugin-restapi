@@ -134,10 +134,10 @@ final class MemberHelper
 
     public static function getNormName($member): string
     {
-        $member->name = \ucwords(\mb_strtolower($member->name));
-        $member->surname = \ucwords(\mb_strtolower($member->surname));
+        $name = \ucwords(\mb_strtolower($member->name));
+        $surname = \ucwords(\mb_strtolower($member->surname));
 
-        return $member->surname . ' ' . \mb_strtoupper($member->name);
+        return $surname . ' ' . \mb_strtoupper($name);
     }
 
     public static function getMemberFormattedInfos($member): array
